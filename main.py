@@ -5,6 +5,12 @@ import time
 from pose_tracker import PoseTracker
 from database import init_db, get_categories, get_workouts_by_category, get_all_workouts, save_workout_session, get_history, delete_history, add_workout, delete_workout
 
+try:
+    from picamera2 import Picamera2
+    HAS_PICAM2 = True
+except ImportError:
+    HAS_PICAM2 = False
+
 class WorkoutApp(ctk.CTk):
     def __init__(self):
         super().__init__()
@@ -218,17 +224,29 @@ class WorkoutApp(ctk.CTk):
         self.tracker.reset_counters()
         
         if self.cap is None:
+            self.use_picam = False
             import platform
-            if platform.system() == "Linux":
-                # Try GStreamer pipeline for Raspberry Pi libcamera
-                self.cap = cv2.VideoCapture("libcamerasrc ! video/x-raw, width=640, height=480, framerate=30/1 ! videoconvert ! appsink", cv2.CAP_GSTREAMER)
+            if platform.system() == "Linux" and HAS_PICAM2:
+                try:
+                    self.picam2 = Picamera2()
+                    config = self.picam2.create_video_configuration(main={"size": (640, 480), "format": "BGR888"})
+                    self.picam2.configure(config)
+                    self.picam2.start()
+                    self.use_picam = True
+                    self.cap = "PICAMERA2"
+                except Exception as e:
+                    print(f"Picamera2 init failed: {e}")
+            
+            if not getattr(self, 'use_picam', False):
+                if platform.system() == "Linux":
+                    self.cap = cv2.VideoCapture("libcamerasrc ! video/x-raw, width=640, height=480, framerate=30/1 ! videoconvert ! appsink", cv2.CAP_GSTREAMER)
+                    if not self.cap.isOpened():
+                        self.cap = cv2.VideoCapture(0, cv2.CAP_V4L2)
+                else:
+                    self.cap = cv2.VideoCapture(0)
                 if not self.cap.isOpened():
-                    self.cap = cv2.VideoCapture(0, cv2.CAP_V4L2)
-            else:
-                self.cap = cv2.VideoCapture(0)
-            if not self.cap.isOpened():
-                self.video_label.configure(text="ERROR: Camera not found at index 0.\nCheck /dev/video0 or try index 1.")
-                print("ERROR: cv2.VideoCapture(0) failed to open.")
+                    self.video_label.configure(text="ERROR: Camera not found at index 0.\nCheck /dev/video0 or try index 1.")
+                    print("ERROR: cv2.VideoCapture(0) failed to open.")
             self.update_frame()
             
         self.start_btn.configure(state="disabled")
@@ -279,7 +297,12 @@ class WorkoutApp(ctk.CTk):
 
     def end_session(self):
         self.app_state = "idle"
-        if self.cap:
+        if getattr(self, 'use_picam', False):
+            self.picam2.stop()
+            self.picam2.close()
+            self.use_picam = False
+            self.cap = None
+        elif self.cap:
             self.cap.release()
             self.cap = None
             
@@ -294,8 +317,16 @@ class WorkoutApp(ctk.CTk):
         self.detected_label.configure(text="AI Detected: None")
 
     def update_frame(self):
-        if self.app_state in ["in_set", "resting"] and not self.is_paused and self.cap and self.cap.isOpened():
-            ret, frame = self.cap.read()
+        if self.app_state in ["in_set", "resting"] and not self.is_paused and self.cap:
+            if getattr(self, 'use_picam', False):
+                try:
+                    frame = self.picam2.capture_array()
+                    ret = True
+                except:
+                    ret = False
+            else:
+                ret, frame = self.cap.read() if getattr(self.cap, 'isOpened', lambda: False)() else (False, None)
+                
             if ret:
                 # Do NOT flip here. Process raw frame so Left/Right in MediaPipe are accurate.
                 workout_param = self.workout_var.get() if self.app_state == "in_set" else "Resting"

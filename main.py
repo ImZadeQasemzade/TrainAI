@@ -10,7 +10,7 @@ class WorkoutApp(ctk.CTk):
         super().__init__()
         
         self.title("AI Workout Tracker")
-        self.geometry("1100x750")
+        self.geometry("900x600")
         ctk.set_appearance_mode("dark")
         ctk.set_default_color_theme("blue")
         
@@ -60,7 +60,7 @@ class WorkoutApp(ctk.CTk):
         self.video_label.pack(expand=True, fill="both", padx=10, pady=10)
         
         # Right Frame (Controls)
-        self.control_frame = ctk.CTkFrame(self.tab_tracker, corner_radius=10)
+        self.control_frame = ctk.CTkScrollableFrame(self.tab_tracker, corner_radius=10)
         self.control_frame.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
         
         # Filters
@@ -308,7 +308,7 @@ class WorkoutApp(ctk.CTk):
                 
                 rgb_image = cv2.cvtColor(processed_frame, cv2.COLOR_BGR2RGB)
                 pil_image = Image.fromarray(rgb_image)
-                ctk_image = ctk.CTkImage(light_image=pil_image, dark_image=pil_image, size=(750, 560))
+                ctk_image = ctk.CTkImage(light_image=pil_image, dark_image=pil_image, size=(550, 410))
                 
                 self.video_label.configure(image=ctk_image, text="")
                 

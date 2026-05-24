@@ -218,7 +218,14 @@ class WorkoutApp(ctk.CTk):
         self.tracker.reset_counters()
         
         if self.cap is None:
-            self.cap = cv2.VideoCapture(0)
+            import platform
+            if platform.system() == "Linux":
+                # Try GStreamer pipeline for Raspberry Pi libcamera
+                self.cap = cv2.VideoCapture("libcamerasrc ! video/x-raw, width=640, height=480, framerate=30/1 ! videoconvert ! appsink", cv2.CAP_GSTREAMER)
+                if not self.cap.isOpened():
+                    self.cap = cv2.VideoCapture(0, cv2.CAP_V4L2)
+            else:
+                self.cap = cv2.VideoCapture(0)
             if not self.cap.isOpened():
                 self.video_label.configure(text="ERROR: Camera not found at index 0.\nCheck /dev/video0 or try index 1.")
                 print("ERROR: cv2.VideoCapture(0) failed to open.")

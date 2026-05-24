@@ -98,11 +98,11 @@ class WorkoutApp(ctk.CTk):
         self.reps_frame = ctk.CTkFrame(dash_frame, fg_color="transparent")
         self.reps_frame.pack(pady=10, fill="x", padx=10)
         
-        self.l_rep_label = ctk.CTkLabel(self.reps_frame, text="L: 0", font=("Inter", 28, "bold"))
-        self.l_rep_label.pack(side="left", padx=20)
+        self.l_rep_label = ctk.CTkLabel(self.reps_frame, text="L: 0", font=("Inter", 20, "bold"))
+        self.l_rep_label.pack(side="left", padx=10)
         
-        self.r_rep_label = ctk.CTkLabel(self.reps_frame, text="R: 0", font=("Inter", 28, "bold"))
-        self.r_rep_label.pack(side="right", padx=20)
+        self.r_rep_label = ctk.CTkLabel(self.reps_frame, text="R: 0", font=("Inter", 20, "bold"))
+        self.r_rep_label.pack(side="right", padx=10)
         
         # Buttons
         self.start_btn = ctk.CTkButton(self.control_frame, text="Start Set", font=("Inter", 16, "bold"), height=40, fg_color="#10ac84", hover_color="#1dd1a1", command=self.start_set)

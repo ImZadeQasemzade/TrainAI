@@ -219,6 +219,9 @@ class WorkoutApp(ctk.CTk):
         
         if self.cap is None:
             self.cap = cv2.VideoCapture(0)
+            if not self.cap.isOpened():
+                self.video_label.configure(text="ERROR: Camera not found at index 0.\nCheck /dev/video0 or try index 1.")
+                print("ERROR: cv2.VideoCapture(0) failed to open.")
             self.update_frame()
             
         self.start_btn.configure(state="disabled")
@@ -311,6 +314,9 @@ class WorkoutApp(ctk.CTk):
                 ctk_image = ctk.CTkImage(light_image=pil_image, dark_image=pil_image, size=(550, 410))
                 
                 self.video_label.configure(image=ctk_image, text="")
+            else:
+                self.video_label.configure(image=None, text="ERROR: Camera opened, but frame is empty.\nCheck camera permissions or driver.")
+                print("ERROR: cap.read() returned False.")
                 
             self.after(30, self.update_frame)
             
